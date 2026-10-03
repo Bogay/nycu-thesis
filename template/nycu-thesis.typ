@@ -26,8 +26,6 @@
                      "DFKai-SB", "BiauKai", "AR PL UKai TW", "Noto Serif CJK TC")
 
 // ── State ─────────────────────────────────────────────────────────────
-#let _show-num    = state("_show-num",    false)  // whether to show page numbers
-#let _front-mat   = state("_front-mat",   true)   // true → Roman; false → Arabic
 #let _in-appendix = state("_in-appendix", false)  // true after #show: appendix
 #let _zh-kw       = state("_zh-kw",       ())     // stored keywords for abstracts
 #let _en-kw       = state("_en-kw",       ())
@@ -64,6 +62,7 @@
   background: if show-watermark { _watermark } else { none },
 )[
   #set align(center)
+  #set par(justify: false)
 
   // ① Chinese institution — KaiTi 18 pt, ~1.5× line height
   #text(font: _zh-fonts, size: 18pt)[
@@ -85,9 +84,9 @@
   #v(2em)
 
   // ③ Titles — KaiTi/TNR 18 pt
-  #text(font: _zh-fonts, size: 18pt)[#zh-title]
+  #text(font: _mixed-fonts, size: 18pt)[#set par(leading: 9pt); #zh-title]
   #v(0.5em)
-  #text(font: _en-fonts, size: 18pt)[#en-title]
+  #text(font: _en-fonts, size: 18pt)[#set par(leading: 9pt); #en-title]
 
   // Remaining vertical space pushed to author/date area
   #v(1fr)
@@ -102,7 +101,7 @@
   #v(2em)
 
   // ⑤ Date
-  #text(font: _zh-fonts, size: 18pt)[中華民國 #zh-year 年 #zh-month 月]
+  #text(font: _zh-fonts, size: 18pt)[中華民國#zh-year;年#zh-month;月]
   #v(0.3em)
   #text(font: _en-fonts, size: 18pt)[#en-month #en-year]
 ]
@@ -119,16 +118,17 @@
   show-watermark,
 ) = page(
   paper:      "a4",
-  margin:     (top: 3cm, bottom: 3cm, left: 3cm, right: 2cm),
+  margin:     (top: 2cm, bottom: 2cm, left: 3cm, right: 2cm),
   header:     none,
   footer:     none,
   numbering:  none,
   background: if show-watermark { _watermark } else { none },
 )[
   #set align(center)
+  #set par(justify: false)
 
   // Titles — 18 pt
-  #text(font: _zh-fonts, size: 18pt)[#set par(leading: 9pt); #zh-title]
+  #text(font: _mixed-fonts, size: 18pt)[#set par(leading: 9pt); #zh-title]
   #v(0.5em)
   #text(font: _en-fonts, size: 18pt)[#set par(leading: 9pt); #en-title]
 
@@ -137,13 +137,14 @@
   // Author / advisor block — 14 pt, single spacing
   #set text(size: 14pt)
   #grid(
-    columns: (1fr, 1fr),
-    align:   (left, left),
-    gutter:  0.5em,
+    columns:       (auto, auto),
+    align:         left,
+    column-gutter: 3em,
+    row-gutter:    0.5em,
     text(font: _zh-fonts)[研究生：#zh-author],
-    text(font: _en-fonts)[Student: #en-author-first #en-author-last],
-    text(font: _zh-fonts)[指導教授：#zh-advisor 博士],
-    text(font: _en-fonts)[Advisor: Dr. #en-advisor-first #en-advisor-last],
+    text(font: _en-fonts)[Student: #en-author-last, #en-author-first],
+    text(font: _zh-fonts)[指導教授：#zh-advisor],
+    text(font: _en-fonts)[Advisor: #en-advisor-last, #en-advisor-first],
   )
 
   #v(2em)
@@ -165,7 +166,7 @@
     Submitted to #en-department \
     #en-college \
     #en-university \
-    in partial Fulfillment of the Requirements \
+    in Partial Fulfillment of the Requirements \
     for the Degree of \
     #en-degree-type \
     in \
@@ -180,7 +181,7 @@
     Taiwan, Republic of China
   ]
   #v(0.3em)
-  #text(font: _zh-fonts, size: 14pt)[中華民國 #zh-year 年 #zh-month 月]
+  #text(font: _zh-fonts, size: 14pt)[中華民國#zh-year;年#zh-month;月]
 ]
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -215,9 +216,30 @@
   }
 }
 
+/// Switches page numbering to Arabic numerals starting at 1.
+/// Usage:  #show: main-matter   (place right before the first chapter)
+#let main-matter(body) = {
+  set page(numbering: "1")
+  counter(page).update(1)
+  body
+}
+
 /// Generates Table of Contents, List of Figures, and List of Tables.
 /// Call this after the abstracts and before the first chapter.
 #let toc-section() = {
+  // Figure / table numbers depend on the chapter counter, which must be read
+  // at the figure's own location; evaluated at the outline it would read 0.
+  show outline.entry: it => {
+    let el = it.element
+    if el.func() != figure { return it }
+    let loc = el.location()
+    let ch = counter(heading.where(level: 1)).at(loc).first()
+    let n = counter(figure.where(kind: el.kind)).at(loc).first()
+    link(loc, it.indented(
+      [#el.supplement #ch.#n],
+      [#el.caption.body #box(width: 1fr, it.fill) #it.page()],
+    ))
+  }
   outline(
     title:    [目錄],
     depth:    3,
@@ -355,9 +377,8 @@
     header:         none,
     footer-descent: 1cm,
     footer: context {
-      if _show-num.get() {
-        let fmt = if _front-mat.get() { "i" } else { "1" }
-        align(center, counter(page).display(fmt))
+      if page.numbering != none {
+        align(center, counter(page).display())
       }
     },
     background: if mode == "draft" { _watermark } else { none },
@@ -400,14 +421,6 @@
       counter(figure.where(kind: table)).update(0)
       counter(math.equation).update(0)
 
-      // Transition from front matter (Roman) to main matter (Arabic)
-      // on the first numbered chapter encountered.
-      context {
-        if _front-mat.get() [
-          #_front-mat.update(false)
-          #counter(page).update(1)
-        ]
-      }
     }
 
     // Build display: numbering prefix + body text
@@ -473,7 +486,9 @@
   )
 
   // ── Start front-matter page numbering (i, ii, iii …) ─────────────
-  _show-num.update(true)
+  // Set through `page.numbering` (not a footer-only state) so that table of
+  // contents entries are formatted the same way as the page footers.
+  set page(numbering: "i")
   counter(page).update(1)
 
   // ── User body (acknowledgments → abstracts → toc-section → chapters) ─
