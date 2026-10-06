@@ -75,11 +75,12 @@
   #v(2em)
 
   // ② English institution — TNR
-  #text(font: _en-fonts, size: 14pt)[#en-department]
-  #v(0.3em)
-  #text(font: _en-fonts, size: 16pt)[#en-university]
-  #v(0.3em)
-  #text(font: _en-fonts, size: 16pt)[#en-degree]
+  #[
+    #set par(leading: 12pt)
+    #text(font: _en-fonts, size: 14pt)[#en-department] \
+    #text(font: _en-fonts, size: 16pt)[#en-university] \
+    #text(font: _en-fonts, size: 16pt)[#en-degree]
+  ]
 
   #v(2em)
 
@@ -141,10 +142,10 @@
     align:         left,
     column-gutter: 3em,
     row-gutter:    0.5em,
-    text(font: _zh-fonts)[研究生：#zh-author],
-    text(font: _en-fonts)[Student: #en-author-last, #en-author-first],
+    text(font: _zh-fonts)[#box(width: 4em)[研#h(1fr)究#h(1fr)生]：#zh-author],
+    text(font: _en-fonts)[Student：#en-author-last, #en-author-first],
     text(font: _zh-fonts)[指導教授：#zh-advisor],
-    text(font: _en-fonts)[Advisor: #en-advisor-last, #en-advisor-first],
+    text(font: _en-fonts)[Advisor：#en-advisor-last, #en-advisor-first],
   )
 
   #v(2em)
@@ -181,7 +182,7 @@
     Taiwan, Republic of China
   ]
   #v(0.3em)
-  #text(font: _zh-fonts, size: 14pt)[中華民國#zh-year;年#zh-month;月]
+  #text(font: _zh-fonts, size: 14pt)[中華民國 #zh-year;年#zh-month;月]
 ]
 
 // ═══════════════════════════════════════════════════════════════════════
