@@ -90,8 +90,10 @@ the stack (e.g. `Liberation Serif` for TNR, `Noto Serif CJK TC` for KaiTi).
   en-keywords:    ("keyword one", "keyword two", "keyword three"),
 
   // "draft"  — shows 初稿 watermark on every page
-  // "upload" — no watermark, no PDF form pages (for library upload)
-  // "print"  — no watermark, include PDF form pages (for binding)
+  // "upload" — no watermark (for library upload)
+  // "print"  — no watermark (for binding)
+  // upload and print render the same; the template never inserts the
+  // form PDFs. Merge them yourself (see "Authorization and approval forms").
   mode:           "draft",
 )
 
@@ -148,14 +150,22 @@ typst watch  --root . examples/my-thesis/main.typ
 
 ### 3. Authorization and approval forms
 
-NYCU requires physically signed/stamped PDF forms. Merge them with the compiled PDF externally:
+NYCU requires signed or stamped PDF forms. The template does not insert them.
+Merge them into the compiled PDF in the order the school specifies: cover, title
+page (pages 1–2 of the build), authorization, approval, then the rest
+(acknowledgments onward):
 
 ```sh
-# Linux/macOS
-pdfunite auth.pdf approval.pdf thesis.pdf final.pdf
+# Linux/macOS (qpdf)
+qpdf --empty --pages thesis.pdf 1-2 auth.pdf approval.pdf thesis.pdf 3-z -- final.pdf
 
 # Windows: use PDF24, Adobe Acrobat, or similar
 ```
+
+The thesis format form (學位論文發表形式確認書, attachment 5) and, when they
+apply, the co-author statement and the submitted-works declaration go after the
+appendices and before the back cover. Append them at submission time with the
+same command (add their files at the end of the `--pages` list).
 
 ## Template API Reference
 

@@ -29,6 +29,35 @@
 #let _in-appendix = state("_in-appendix", false)  // true after #show: appendix
 #let _zh-kw       = state("_zh-kw",       ())     // stored keywords for abstracts
 #let _en-kw       = state("_en-kw",       ())
+#let _meta        = state("_meta",        none)   // thesis data for abstract headers
+
+// ── Abstract header block (lab convention; not in the school's rules) ──
+// Title, student and advisor, university and institute, printed above the
+// 中文摘要 / 英文摘要 heading.
+#let _abs-info(zh, m) = {
+  let adv = m.en-advisor
+  set align(center)
+  set par(justify: false, leading: 0.5em)
+  text(size: 12pt)[
+    #if zh [#m.zh-title] else [#m.en-title]
+    #v(0.4em)
+    #grid(
+      columns: (1fr, 1fr),
+      align: (left, right),
+      if zh [學生：#m.zh-author] else [Student : #m.en-author.at(1) #m.en-author.at(0)],
+      if zh [指導教授：#m.zh-advisor 博士] else [Advisor: Dr. #adv.at(1) #adv.at(0)],
+    )
+    #v(0.4em)
+    #if zh [
+      #m.zh-university \
+      #m.zh-department
+    ] else [
+      #m.en-department \
+      #m.en-university
+    ]
+  ]
+  v(1em)
+}
 
 // ── Watermark (draft mode) ────────────────────────────────────────────
 #let _watermark = place(
@@ -66,7 +95,7 @@
 
   // ① Chinese institution — KaiTi 18 pt, ~1.5× line height
   #text(font: _zh-fonts, size: 18pt)[
-    #set par(leading: 9pt)
+    #set par(leading: 11.2pt)
     #zh-university \
     #zh-department \
     #zh-degree
@@ -76,7 +105,7 @@
 
   // ② English institution — TNR
   #[
-    #set par(leading: 12pt)
+    #set par(leading: 13.5pt)
     #text(font: _en-fonts, size: 14pt)[#en-department] \
     #text(font: _en-fonts, size: 16pt)[#en-university] \
     #text(font: _en-fonts, size: 16pt)[#en-degree]
@@ -85,16 +114,16 @@
   #v(2em)
 
   // ③ Titles — KaiTi/TNR 18 pt
-  #text(font: _mixed-fonts, size: 18pt)[#set par(leading: 9pt); #zh-title]
+  #text(font: _mixed-fonts, size: 18pt)[#set par(leading: 11.2pt); #zh-title]
   #v(0.5em)
-  #text(font: _en-fonts, size: 18pt)[#set par(leading: 9pt); #en-title]
+  #text(font: _en-fonts, size: 18pt)[#set par(leading: 15.2pt); #en-title]
 
   // Remaining vertical space pushed to author/date area
   #v(1fr)
 
   // ④ Author & advisor — mixed 18 pt
   #text(font: _mixed-fonts, size: 18pt)[
-    #set par(leading: 9pt)
+    #set par(leading: 11.2pt)
     研究生：#zh-author（#en-author-last, #en-author-first）\
     指導教授：#zh-advisor（#en-advisor-last, #en-advisor-first）
   ]
@@ -129,9 +158,9 @@
   #set par(justify: false)
 
   // Titles — 18 pt
-  #text(font: _mixed-fonts, size: 18pt)[#set par(leading: 9pt); #zh-title]
+  #text(font: _mixed-fonts, size: 18pt)[#set par(leading: 11.2pt); #zh-title]
   #v(0.5em)
-  #text(font: _en-fonts, size: 18pt)[#set par(leading: 9pt); #en-title]
+  #text(font: _en-fonts, size: 18pt)[#set par(leading: 15.2pt); #en-title]
 
   #v(2em)
 
@@ -152,7 +181,7 @@
 
   // Chinese institution — 14 pt
   #text(font: _zh-fonts, size: 14pt)[
-    #set par(leading: 7pt)
+    #set par(leading: 8.7pt)
     #zh-university \
     #zh-department \
     #zh-degree
@@ -189,10 +218,15 @@
 // PUBLIC API — call these functions inside the body of main.typ
 // ═══════════════════════════════════════════════════════════════════════
 
-/// Inserts the Acknowledgments (誌謝) section.
+/// Inserts the Acknowledgments (誌謝) page: no page number, not in the
+/// table of contents, and not counted, so 中文摘要 is page i.
 #let acknowledgments(body) = {
-  heading(level: 1, numbering: none, outlined: true)[誌謝]
-  body
+  [
+    #set page(numbering: none)
+    #heading(level: 1, numbering: none, outlined: false)[誌謝]
+    #body
+  ]
+  counter(page).update(1)
 }
 
 /// Inserts the Chinese abstract with auto-injected keywords.
@@ -208,7 +242,7 @@
 
 /// Inserts the English abstract with auto-injected keywords.
 #let en-abstract(body) = {
-  heading(level: 1, numbering: none, outlined: true)[Abstract]
+  heading(level: 1, numbering: none, outlined: true)[英文摘要]
   body
   v(1em)
   context {
@@ -241,21 +275,14 @@
       [#el.caption.body #box(width: 1fr, it.fill) #it.page()],
     ))
   }
-  outline(
-    title:    [目錄],
-    depth:    3,
-    indent:   auto,
-  )
-  pagebreak(weak: true)
-  outline(
-    title:  [圖目錄],
-    target: figure.where(kind: image),
-  )
-  pagebreak(weak: true)
-  outline(
-    title:  [表目錄],
-    target: figure.where(kind: table),
-  )
+  // Titles are real (unnumbered, outlined) headings so that 目錄, 圖目錄
+  // and 表目錄 appear in the table of contents, as in the school's sample.
+  heading(level: 1, numbering: none, outlined: true)[目錄]
+  outline(title: none, depth: 3, indent: auto)
+  heading(level: 1, numbering: none, outlined: true)[圖目錄]
+  outline(title: none, target: figure.where(kind: image))
+  heading(level: 1, numbering: none, outlined: true)[表目錄]
+  outline(title: none, target: figure.where(kind: table))
 }
 
 /// Switches heading numbering to appendix style (附錄A, 附錄B…).
@@ -328,9 +355,21 @@
 
   body,
 ) = {
+  assert(
+    mode in ("draft", "upload", "print"),
+    message: "nycu-thesis: mode must be \"draft\", \"upload\" or \"print\", got " + repr(mode),
+  )
+
   // Store keywords for use by zh-abstract / en-abstract
   _zh-kw.update(zh-keywords)
   _en-kw.update(en-keywords)
+  _meta.update((
+    zh-title: zh-title, en-title: en-title,
+    zh-author: zh-author, en-author: en-author,
+    zh-advisor: zh-advisor, en-advisor: en-advisor,
+    zh-university: zh-university, en-university: en-university,
+    zh-department: zh-department, en-department: en-department,
+  ))
 
   // ── Document metadata ──────────────────────────────────────────────
   set document(
@@ -432,12 +471,29 @@
     }
 
     if it.level == 1 {
+      // Short unnumbered titles are letter-spaced to a fixed width (as in
+      // the school's sample and upstream); outline entries are unaffected.
+      let spread = (
+        "誌謝": 3em, "目錄": 3em, "圖目錄": 4em, "表目錄": 4em, "參考文獻": 5.5em,
+      )
+      let key = if it.body.has("text") { it.body.text } else { none }
+      let title = if it.numbering == none and key in spread {
+        box(width: spread.at(key), key.clusters().join(h(1fr)))
+      } else {
+        it.body
+      }
       // Every level-1 heading (chapter or unnumbered section) starts a new page
       pagebreak(weak: true)
+      if it.numbering == none and key in ("中文摘要", "英文摘要") {
+        context {
+          let m = _meta.get()
+          if m != none { _abs-info(key == "中文摘要", m) }
+        }
+      }
       block(width: 100%, above: 2em, below: 1.2em, breakable: false)[
         #set align(center)
         #set text(size: 16pt, weight: "bold")
-        #num-display#it.body
+        #num-display#title
       ]
     } else if it.level == 2 {
       block(width: 100%, above: 1.5em, below: 0.8em, breakable: false)[
