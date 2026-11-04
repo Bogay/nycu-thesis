@@ -198,9 +198,7 @@
     #en-university \
     in Partial Fulfillment of the Requirements \
     for the Degree of \
-    #en-degree-type \
-    in \
-    #en-field
+    #en-degree-type#if en-field != none [ \ in #en-field]
   ]
 
   #v(1fr)
@@ -321,7 +319,7 @@
 ///   zh-college / en-college — college name
 ///   zh-degree / en-degree — degree label (碩士論文 / Master Thesis)
 ///   en-degree-type — full English degree (Master of Science)
-///   en-field — field of study (Computer Science)
+///   en-field — field of study (Computer Science); none omits the "in …" line
 ///   zh-date — (ROC-year in Chinese numerals, month in Chinese)
 ///   en-date — (month string, year string)
 ///   zh-keywords / en-keywords — keyword lists (5–7 items each)
