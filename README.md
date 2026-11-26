@@ -15,7 +15,9 @@ official NYCU Graduate School Thesis Format Specification.
 ```
 nycu-thesis/
 ├── template/
-│   └── nycu-thesis.typ      # Template library — import this in your thesis
+│   ├── nycu-thesis.typ      # Template library — import this in your thesis
+│   └── assets/
+│       └── nycu-mark.png    # School mark for upload/print modes (not GPL, see License)
 └── examples/
     └── demo/                # Example document showing all features
         ├── main.typ
@@ -90,11 +92,15 @@ the stack (e.g. `Liberation Serif` for TNR, `Noto Serif CJK TC` for KaiTi).
   en-keywords:    ("keyword one", "keyword two", "keyword three"),
 
   // "draft"  — shows 初稿 watermark on every page
-  // "upload" — no watermark (for library upload)
-  // "print"  — no watermark (for binding)
+  // "upload" — school mark behind every page (for library upload)
+  // "print"  — school mark behind every page (for binding)
   // upload and print render the same; the template never inserts the
   // form PDFs. Merge them yourself (see "Authorization and approval forms").
   mode:           "draft",
+
+  // auto = bundled school mark; none = no mark; or pass your own image.
+  mark:           auto,
+  mark-opacity:   15%,           // the template fades the mark with a white overlay
 )
 
 // ── Front matter ──────────────────────────────────────────────────────
@@ -182,3 +188,12 @@ same command (add their files at the end of the `--pages` list).
 ## License
 
 GPL-3.0. See [LICENSE](LICENSE).
+
+The GPL covers the template code only. `template/assets/nycu-mark.png` is the
+emblem of National Yang Ming Chiao Tung University. The university owns it, and
+it is not covered by the GPL. It is included only so that NYCU theses can
+carry the school mark. Do not reuse it for other purposes.
+It is the thesis watermark file from the NYCU Library
+([page](https://www.lib.nycu.edu.tw/custom?cid=228),
+[file](https://www.lib.nycu.edu.tw/nycu/download/6694)), unchanged; the
+template fades it when it draws the page background.

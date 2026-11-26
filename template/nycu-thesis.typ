@@ -81,14 +81,14 @@
   zh-author, en-author-last, en-author-first,
   zh-advisor, en-advisor-last, en-advisor-first,
   zh-year, zh-month, en-month, en-year,
-  show-watermark,
+  bg,
 ) = page(
   paper:      "a4",
   margin:     (top: 3cm, bottom: 3cm, left: 3cm, right: 2cm),
   header:     none,
   footer:     none,
   numbering:  none,
-  background: if show-watermark { _watermark } else { none },
+  background: bg,
 )[
   #set align(center)
   #set par(justify: false)
@@ -145,14 +145,14 @@
   zh-author, en-author-last, en-author-first,
   zh-advisor, en-advisor-last, en-advisor-first,
   zh-year, zh-month, en-month, en-year,
-  show-watermark,
+  bg,
 ) = page(
   paper:      "a4",
   margin:     (top: 2cm, bottom: 2cm, left: 3cm, right: 2cm),
   header:     none,
   footer:     none,
   numbering:  none,
-  background: if show-watermark { _watermark } else { none },
+  background: bg,
 )[
   #set align(center)
   #set par(justify: false)
@@ -324,6 +324,13 @@
 ///   en-date — (month string, year string)
 ///   zh-keywords / en-keywords — keyword lists (5–7 items each)
 ///   mode — "draft" (初稿 watermark) | "upload" | "print"
+///   mark — drawn centred behind every page, cover included, in "upload"
+///          and "print" modes. auto (default) = the bundled school mark
+///          (assets/nycu-mark.png, 12 cm wide); none draws nothing; other
+///          content replaces it, e.g. image("my-mark.png", width: 10cm).
+///          Pass an image, not a path: a path would resolve relative to
+///          this template file.
+///   mark-opacity — how strong the mark shows (100% = as given; default 15%)
 #let nycu-thesis(
   zh-title:        [論文中文題目],
   en-title:        "Thesis English Title",
@@ -350,6 +357,8 @@
   en-keywords:     (),
 
   mode:            "draft",
+  mark:            auto,
+  mark-opacity:    15%,
 
   body,
 ) = {
@@ -357,6 +366,22 @@
     mode in ("draft", "upload", "print"),
     message: "nycu-thesis: mode must be \"draft\", \"upload\" or \"print\", got " + repr(mode),
   )
+
+  // Page background: 初稿 in draft mode, otherwise the school mark (if given).
+  // Typst has no image opacity, so the mark is faded by a white overlay.
+  let mark = if mark == auto { image("assets/nycu-mark.png", width: 12cm) } else { mark }
+  let bg = if mode == "draft" { _watermark } else if mark != none {
+    place(center + horizon, context {
+      let s = measure(mark)
+      box(width: s.width, height: s.height, {
+        mark
+        place(top + left, rect(
+          width: s.width, height: s.height, stroke: none,
+          fill: white.transparentize(mark-opacity),
+        ))
+      })
+    })
+  } else { none }
 
   // Store keywords for use by zh-abstract / en-abstract
   _zh-kw.update(zh-keywords)
@@ -419,7 +444,7 @@
         align(center, counter(page).display())
       }
     },
-    background: if mode == "draft" { _watermark } else { none },
+    background: bg,
   )
 
   // ── Figure / table captions ────────────────────────────────────────
@@ -519,7 +544,6 @@
   }
 
   // ── Generate cover and title pages ────────────────────────────────
-  let wm = mode == "draft"
   _cover(
     zh-university, zh-department, zh-degree,
     en-university, en-department, en-degree,
@@ -527,7 +551,7 @@
     zh-author, en-author.at(0), en-author.at(1),
     zh-advisor, en-advisor.at(0), en-advisor.at(1),
     zh-date.at(0), zh-date.at(1), en-date.at(0), en-date.at(1),
-    wm,
+    bg,
   )
   _title-page(
     zh-university, zh-department, zh-degree,
@@ -537,7 +561,7 @@
     zh-author, en-author.at(0), en-author.at(1),
     zh-advisor, en-advisor.at(0), en-advisor.at(1),
     zh-date.at(0), zh-date.at(1), en-date.at(0), en-date.at(1),
-    wm,
+    bg,
   )
 
   // ── Start front-matter page numbering (i, ii, iii …) ─────────────
